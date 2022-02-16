@@ -3,6 +3,7 @@ package stm
 import (
 	"log"
 	"runtime"
+	"sync"
 )
 
 // NewSitemap returns the created the Sitemap's pointer
@@ -11,7 +12,7 @@ func NewSitemap(maxProc int) *Sitemap {
 	if maxProc < 1 || maxProc > runtime.NumCPU() {
 		maxProc = runtime.NumCPU()
 	}
-	log.Printf("Max processors %d\n", maxProc)
+	//log.Printf("Max processors %d\n", maxProc)
 	runtime.GOMAXPROCS(maxProc)
 
 	sm := &Sitemap{
@@ -24,7 +25,7 @@ func NewSitemap(maxProc int) *Sitemap {
 // And also needs to use first this struct if it wants to use this package.
 type Sitemap struct {
 	opts  *Options
-	bldr  Builder
+	bldr  []Builder
 	bldrs Builder
 }
 
@@ -81,33 +82,48 @@ func (sm *Sitemap) Create() *Sitemap {
 	return sm
 }
 
-// Add Should call this after call to Create method on this struct.
-func (sm *Sitemap) Add(url interface{}) *Sitemap {
-	if sm.bldr == nil {
-		sm.bldr = NewBuilderFile(sm.opts, sm.opts.Location())
-	}
-
-	err := sm.bldr.Add(url)
-	if err != nil {
-		if err.FullError() {
-			sm.Finalize()
-			return sm.Add(url)
-		}
-	}
-
-	return sm
+// NewBuilderFile returns a BuilderFile with options copied from the Sitemap.
+func (sm *Sitemap) NewBuilderFile(filename string) *BuilderFile {
+	opts := sm.opts.Clone()
+	opts.SetFilename(filename)
+	bldr := NewBuilderFile(opts, opts.Location())
+	sm.bldr = append(sm.bldr, bldr)
+	sm.bldrs.Add(bldr)
+	return bldr
 }
 
 // XMLContent returns the XML content of the sitemap
 func (sm *Sitemap) XMLContent() []byte {
-	return sm.bldr.XMLContent()
+	if sm != nil && len(sm.bldr) > 0 {
+		return sm.bldr[0].XMLContent()
+	}
+	return nil
+}
+
+func bldrWrite(bldr Builder, wg *sync.WaitGroup) {
+	defer wg.Done()
+	bldr.Write()
 }
 
 // Finalize writes sitemap and index files if it had some
 // specific condition in BuilderFile struct.
 func (sm *Sitemap) Finalize() *Sitemap {
-	sm.bldrs.Add(sm.bldr)
-	sm.bldrs.Write()
+	count := 1
+	if sm.bldr != nil {
+		count += len(sm.bldr)
+	}
+
+	wg := &sync.WaitGroup{}
+	wg.Add(count)
+
+	for _, bldr := range sm.bldr {
+		go bldrWrite(bldr, wg)
+	}
+
+	go bldrWrite(sm.bldrs, wg)
+
+	wg.Wait()
+
 	sm.bldr = nil
 	return sm
 }

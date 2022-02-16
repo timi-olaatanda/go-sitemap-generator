@@ -102,7 +102,7 @@ func (opts *Options) IndexLocation() *Location {
 // It also returns created Namer's pointer.
 func (opts *Options) Namer() *Namer {
 	if opts.nmr == nil {
-		opts.nmr = NewNamer(&NOpts{base: opts.filename, zero: 1, start: 2})
+		opts.nmr = NewNamer(&NOpts{base: opts.filename, zero: 0, start: 1})
 	}
 	return opts.nmr
 }

@@ -1,6 +1,10 @@
 package stm
 
-import "bytes"
+import (
+	"bytes"
+	"errors"
+	"time"
+)
 
 // NewBuilderIndexfile returns the created the BuilderIndexfile's pointer
 func NewBuilderIndexfile(opts *Options, loc *Location) *BuilderIndexfile {
@@ -9,23 +13,27 @@ func NewBuilderIndexfile(opts *Options, loc *Location) *BuilderIndexfile {
 
 // BuilderIndexfile provides implementation for the Builder interface.
 type BuilderIndexfile struct {
-	opts     *Options
-	loc      *Location
-	content  []byte
-	linkcnt  int
-	totalcnt int
+	opts    *Options
+	loc     *Location
+	content []byte
+	linkcnt int
 }
 
 // Add method joins old bytes with creates bytes by it calls from Sitemap.Finalize method.
 func (b *BuilderIndexfile) Add(link interface{}) BuilderError {
-	bldr := link.(*BuilderFile)
-	bldr.Write()
+	bldr, ok := link.(*BuilderFile)
+	if !ok {
+		return &builderFileError{error: errors.New("link is not a *BuilderFile"), full: true}
+	}
 
-	smu := NewSitemapIndexURL(b.opts, URL{{"loc", bldr.loc.URL()}})
+	smu := NewSitemapIndexURL(b.opts, URL{
+		{"loc", bldr.loc.URL()},
+		{"lastmod", time.Now()},
+	})
+
 	b.content = append(b.content, smu.XML()...)
-
-	b.totalcnt += bldr.linkcnt
 	b.linkcnt++
+
 	return nil
 }
 
