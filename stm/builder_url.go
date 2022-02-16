@@ -81,12 +81,10 @@ func (su *sitemapURL) validate() error {
 		return errors.New(msg)
 	}
 	if !locOk {
-		msg := fmt.Sprintf("URL type must have `loc` map's key")
-		return errors.New(msg)
+		return errors.New("URL type must have `loc` map's key")
 	}
 	if !hostOk {
-		msg := fmt.Sprintf("URL type must have `host` map's key")
-		return errors.New(msg)
+		return errors.New("URL type must have `host` map's key")
 	}
 	return nil
 }
@@ -97,18 +95,9 @@ func (su *sitemapURL) XML() []byte {
 	url := doc.CreateElement("url")
 
 	SetBuilderElementValue(url, su.data.URLJoinBy("loc", "host", "loc"), "loc")
-	if _, ok := SetBuilderElementValue(url, su.data, "lastmod"); !ok {
-		lastmod := url.CreateElement("lastmod")
-		lastmod.SetText(time.Now().Format(time.RFC3339))
-	}
-	if _, ok := SetBuilderElementValue(url, su.data, "changefreq"); !ok {
-		changefreq := url.CreateElement("changefreq")
-		changefreq.SetText("weekly")
-	}
-	if _, ok := SetBuilderElementValue(url, su.data, "priority"); !ok {
-		priority := url.CreateElement("priority")
-		priority.SetText("0.5")
-	}
+	SetBuilderElementValue(url, su.data, "lastmod")
+	SetBuilderElementValue(url, su.data, "changefreq")
+	SetBuilderElementValue(url, su.data, "priority")
 	SetBuilderElementValue(url, su.data, "expires")
 	SetBuilderElementValue(url, su.data, "mobile")
 	SetBuilderElementValue(url, su.data, "news")
