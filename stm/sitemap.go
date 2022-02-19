@@ -29,51 +29,9 @@ type Sitemap struct {
 	bldrs Builder
 }
 
-// SetDefaultHost is your website's host name
-func (sm *Sitemap) SetDefaultHost(host string) {
-	sm.opts.SetDefaultHost(host)
-}
-
-// SetSitemapsHost is the remote host where your sitemaps will be hosted
-func (sm *Sitemap) SetSitemapsHost(host string) {
-	sm.opts.SetSitemapsHost(host)
-}
-
-// SetSitemapsPath sets this to a directory/path if you don't
-// want to upload to the root of your `SitemapsHost`
-func (sm *Sitemap) SetSitemapsPath(path string) {
-	sm.opts.SetSitemapsPath(path)
-}
-
-// SetPublicPath is the directory to write sitemaps to locally
-func (sm *Sitemap) SetPublicPath(path string) {
-	sm.opts.SetPublicPath(path)
-}
-
-// SetAdapter can switch output file storage.
-// We have S3Adapter and FileAdapter (default: FileAdapter)
-func (sm *Sitemap) SetAdapter(adp Adapter) {
-	sm.opts.SetAdapter(adp)
-}
-
-// SetVerbose can switch verbose output to console.
-func (sm *Sitemap) SetVerbose(verbose bool) {
-	sm.opts.SetVerbose(verbose)
-}
-
-// SetCompress can switch compress for the output file.
-func (sm *Sitemap) SetCompress(compress bool) {
-	sm.opts.SetCompress(compress)
-}
-
-// SetPretty option allows pretty formating to the output files.
-func (sm *Sitemap) SetPretty(pretty bool) {
-	sm.opts.SetPretty(pretty)
-}
-
-// SetFilename can apply any name in this method if you wants to change output file name
-func (sm *Sitemap) SetFilename(filename string) {
-	sm.opts.SetFilename(filename)
+// GetOptions returns the associated sitemap's Options
+func (sm *Sitemap) GetOptions() *Options {
+	return sm.opts
 }
 
 // Create method must be that calls first this method in that before call to Add method on this struct.
@@ -83,9 +41,7 @@ func (sm *Sitemap) Create() *Sitemap {
 }
 
 // NewBuilderFile returns a BuilderFile with options copied from the Sitemap.
-func (sm *Sitemap) NewBuilderFile(filename string) *BuilderFile {
-	opts := sm.opts.Clone()
-	opts.SetFilename(filename)
+func (sm *Sitemap) NewBuilderFile(opts *Options) *BuilderFile {
 	bldr := NewBuilderFile(opts, opts.Location())
 	sm.bldr = append(sm.bldr, bldr)
 	sm.bldrs.Add(bldr)
